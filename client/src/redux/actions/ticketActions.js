@@ -14,8 +14,7 @@ import {
   SET_TICKET_SEARCH,
 } from "../types";
 
-// Change the API URL to point to the local development server
-const API_URL = "http://localhost:5000/api";
+const API_URL = "https://rtsbackend.vercel.app/api";
 
 // Setup axios config with token
 const getConfig = () => {
@@ -35,15 +34,19 @@ const checkPermission = (user, ticketUserId) => {
 
 export const getTickets = () => async (dispatch, getState) => {
   try {
+    dispatch({ type: FETCH_TICKETS_REQUEST });
+
     const res = await axios.get(`${API_URL}/tickets`, getConfig());
 
     dispatch({
-      type: GET_TICKETS,
+      type: FETCH_TICKETS_SUCCESS,
       payload: res.data,
     });
+
+    return res.data;
   } catch (err) {
     dispatch({
-      type: TICKET_ERROR,
+      type: FETCH_TICKETS_FAILURE,
       payload: err.response?.data?.error || "Error fetching tickets",
     });
     throw err;
@@ -110,6 +113,7 @@ export const updateTicketStatus =
         type: UPDATE_TICKET_STATUS,
         payload: { ticketId, status: res.data.status },
       });
+
       return res.data;
     } catch (err) {
       dispatch({
@@ -138,6 +142,7 @@ export const deleteTicket = (ticketId) => async (dispatch) => {
       type: TICKET_ERROR,
       payload: err.response?.data?.error || "Error deleting ticket",
     });
+    throw err;
   }
 };
 

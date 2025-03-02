@@ -245,13 +245,7 @@ const AdminDashboard = ({
               <option value="resolved">Resolved</option>
               <option value="closed">Closed</option>
             </select>
-            <input
-              type="text"
-              placeholder="Search tickets..."
-              value={searchInput}
-              onChange={handleSearch}
-              className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
+            
           </div>
         </div>
         <div className="overflow-x-auto">
@@ -298,20 +292,11 @@ const AdminDashboard = ({
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       <div className="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center">
-                        <span className="text-white text-sm">
-                          {ticket.user.name
-                            .split(" ")
-                            .map((n) => n[0])
-                            .join("")}
-                        </span>
+                        
                       </div>
                       <div className="ml-3">
-                        <div className="text-sm font-medium text-gray-900">
-                          {ticket.user.name}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          {ticket.user.email}
-                        </div>
+                        
+                        
                       </div>
                     </div>
                   </td>
