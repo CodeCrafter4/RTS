@@ -245,7 +245,6 @@ const AdminDashboard = ({
               <option value="resolved">Resolved</option>
               <option value="closed">Closed</option>
             </select>
-            
           </div>
         </div>
         <div className="overflow-x-auto">
@@ -291,13 +290,8 @@ const AdminDashboard = ({
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
-                      <div className="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center">
-                        
-                      </div>
-                      <div className="ml-3">
-                        
-                        
-                      </div>
+                      <div className="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center"></div>
+                      <div className="ml-3"></div>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
