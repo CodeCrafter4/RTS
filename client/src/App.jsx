@@ -9,6 +9,7 @@ import {
 import store from "./redux/store";
 
 import Navigation from "./components/layout/Navigation";
+import Footer from "./components/layout/Footer";
 import Login from "./components/auth/Login";
 import AdminLogin from "./components/auth/AdminLogin";
 import Signup from "./components/auth/Signup";
@@ -25,25 +26,28 @@ class App extends Component {
     return (
       <Provider store={store}>
         <Router>
-          <div className="min-h-screen bg-gray-50">
+          <div className="min-h-screen bg-gray-50 flex flex-col">
             <Navigation />
-            <Routes>
-              <Route path="/login" element={<Login />} />
-              <Route path="/admin/login" element={<AdminLogin />} />
-              <Route path="/signup" element={<Signup />} />
-              <Route path="/admin" element={<ProtectedAdminDashboard />} />
-              <Route
-                path="/dashboard"
-                element={
-                  store.getState().auth.user?.role === "admin" ? (
-                    <ProtectedAdminDashboard />
-                  ) : (
-                    <ProtectedUserDashboard />
-                  )
-                }
-              />
-              <Route path="/" element={<Navigate to="/dashboard" />} />
-            </Routes>
+            <main className="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+              <Routes>
+                <Route path="/login" element={<Login />} />
+                <Route path="/admin/login" element={<AdminLogin />} />
+                <Route path="/signup" element={<Signup />} />
+                <Route path="/admin" element={<ProtectedAdminDashboard />} />
+                <Route
+                  path="/dashboard"
+                  element={
+                    store.getState().auth.user?.role === "admin" ? (
+                      <ProtectedAdminDashboard />
+                    ) : (
+                      <ProtectedUserDashboard />
+                    )
+                  }
+                />
+                <Route path="/" element={<Navigate to="/dashboard" />} />
+              </Routes>
+            </main>
+            <Footer />
           </div>
         </Router>
       </Provider>

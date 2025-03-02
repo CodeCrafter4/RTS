@@ -1,11 +1,10 @@
 const mongoose = require("mongoose");
 
-const ticketSchema = new mongoose.Schema(
+const TicketSchema = new mongoose.Schema(
   {
-    title: {
+    subject: {
       type: String,
       required: true,
-      trim: true,
     },
     description: {
       type: String,
@@ -13,13 +12,62 @@ const ticketSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["open", "in_progress", "closed"],
+      enum: ["open", "in_progress", "resolved", "closed"],
       default: "open",
     },
-    createdBy: {
+    priority: {
+      type: String,
+      enum: ["low", "medium", "high"],
+      default: "medium",
+    },
+    category: {
+      type: String,
+      required: true,
+    },
+    user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
+    },
+    assignedTo: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
+    comments: [
+      {
+        text: {
+          type: String,
+          required: true,
+        },
+        user: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "User",
+          required: true,
+        },
+        createdAt: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
+    attachments: [
+      {
+        filename: String,
+        path: String,
+        uploadedBy: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "User",
+        },
+        uploadedAt: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
+    lastUpdated: {
+      type: Date,
+      default: Date.now,
     },
   },
   {
@@ -27,6 +75,18 @@ const ticketSchema = new mongoose.Schema(
   }
 );
 
-const Ticket = mongoose.model("Ticket", ticketSchema);
+// Update lastUpdated timestamp before saving
+TicketSchema.pre("save", function (next) {
+  this.lastUpdated = Date.now();
+  next();
+});
+
+// Create indexes for better query performance
+TicketSchema.index({ status: 1, createdAt: -1 });
+TicketSchema.index({ user: 1, createdAt: -1 });
+TicketSchema.index({ priority: 1 });
+TicketSchema.index({ category: 1 });
+
+const Ticket = mongoose.model("Ticket", TicketSchema);
 
 module.exports = Ticket;
