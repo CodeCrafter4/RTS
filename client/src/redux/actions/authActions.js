@@ -7,7 +7,7 @@ import {
   LOGOUT,
 } from "../types";
 
-const API_URL = "http://localhost:4000/api";
+const API_URL = "https://rtsbackend.vercel.app/api";
 
 export const login = (email, password) => async (dispatch) => {
   try {

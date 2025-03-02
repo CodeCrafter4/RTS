@@ -42,14 +42,16 @@ class AdminLogin extends Component {
       const response = await this.props.login(email, password);
 
       if (response.user.role !== "admin") {
-        this.setState((prevState) => ({
-          error: "Access denied. Admin privileges required.",
-          attempts: prevState.attempts + 1,
-        }));
-
-        if (prevState.attempts + 1 >= 3) {
-          this.lockAccount();
-        }
+        this.setState((prevState) => {
+          const newAttempts = prevState.attempts + 1;
+          if (newAttempts >= 3) {
+            this.lockAccount();
+          }
+          return {
+            error: "Access denied. Admin privileges required.",
+            attempts: newAttempts,
+          };
+        });
         return;
       }
 

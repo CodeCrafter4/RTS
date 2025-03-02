@@ -7,7 +7,7 @@ import {
   TICKET_ERROR,
 } from "../types";
 
-const API_URL = "http://localhost:4000/api";
+const API_URL = "https://rtsbackend.vercel.app/api";
 
 // Setup axios config with token
 const getConfig = () => {
