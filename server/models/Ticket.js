@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 
 const TicketSchema = new mongoose.Schema(
   {
-    subject: {
+    title: {
       type: String,
       required: true,
     },
@@ -24,10 +24,14 @@ const TicketSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    user: {
+    createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
+    },
+    createdAt: {
+      type: Date,
+      default: Date.now,
     },
     assignedTo: {
       type: mongoose.Schema.Types.ObjectId,

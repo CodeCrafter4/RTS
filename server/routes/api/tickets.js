@@ -5,23 +5,22 @@ const adminAuth = require("../../middleware/adminAuth");
 const Ticket = require("../../models/Ticket");
 const { check, validationResult } = require("express-validator");
 const createCsvStringifier = require("csv-writer").createObjectCsvStringifier;
+const User = require('../../models/User');
 
 // @route   GET api/tickets
 // @desc    Get all tickets (admin) or user's tickets
 // @access  Private
 router.get("/", auth, async (req, res) => {
   try {
+    const user = await User.findById(req.user.id);
     let tickets;
-    if (req.user.role === "admin") {
-      tickets = await Ticket.find()
-        .populate("user", ["name", "email"])
-        .populate("assignedTo", ["name", "email"])
-        .sort({ createdAt: -1 });
+    
+    if (user.role === 'admin') {
+      tickets = await Ticket.find().populate('createdBy', 'username email');
     } else {
-      tickets = await Ticket.find({ user: req.user.id })
-        .populate("assignedTo", ["name", "email"])
-        .sort({ createdAt: -1 });
+      tickets = await Ticket.find({ createdBy: req.user.id }).populate('createdBy', 'username email');
     }
+    
     res.json(tickets);
   } catch (err) {
     console.error(err.message);
@@ -37,7 +36,7 @@ router.post(
   [
     auth,
     [
-      check("subject", "Subject is required").not().isEmpty(),
+      check("title", "Title is required").not().isEmpty(),
       check("description", "Description is required").not().isEmpty(),
       check("category", "Category is required").not().isEmpty(),
     ],
@@ -49,18 +48,19 @@ router.post(
     }
 
     try {
-      const { subject, description, category, priority } = req.body;
+      const { title, description, category, priority, status } = req.body;
 
       const newTicket = new Ticket({
-        subject,
+        title,
         description,
         category,
         priority: priority || "medium",
-        user: req.user.id,
+        status: status || "open",
+        createdBy: req.user.id,
       });
 
       const ticket = await newTicket.save();
-      await ticket.populate("user", ["name", "email"]);
+      await ticket.populate("createdBy", "username email");
 
       res.json(ticket);
     } catch (err) {
@@ -75,21 +75,19 @@ router.post(
 // @access  Private (Admin only)
 router.patch("/:id/status", [auth, adminAuth], async (req, res) => {
   try {
-    const { status } = req.body;
-
-    if (!["open", "in_progress", "resolved", "closed"].includes(status)) {
-      return res.status(400).json({ msg: "Invalid status" });
+    const user = await User.findById(req.user.id);
+    if (user.role !== 'admin') {
+      return res.status(403).json({ msg: 'Not authorized' });
     }
 
     const ticket = await Ticket.findById(req.params.id);
-
     if (!ticket) {
       return res.status(404).json({ msg: "Ticket not found" });
     }
 
-    ticket.status = status;
+    ticket.status = req.body.status;
     await ticket.save();
-
+    await ticket.populate('createdBy', 'username email');
     res.json(ticket);
   } catch (err) {
     console.error(err.message);
