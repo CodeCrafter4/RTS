@@ -18,15 +18,13 @@ app.use("/api/auth", require("./routes/api/auth"));
 app.use("/api/tickets", require("./routes/api/tickets"));
 app.use("/api/users", require("./routes/api/users"));
 
-// Serve static assets in production
-if (process.env.NODE_ENV === "production") {
-  // Set static folder
-  app.use(express.static(path.join(__dirname, "../client/build")));
+// Serve static files from the React app
+app.use(express.static(path.join(__dirname, "../client/build")));
 
-  app.get("*", (req, res) => {
-    res.sendFile(path.resolve(__dirname, "../client/build/index.html"));
-  });
-}
+// Handle React routing, return all requests to React app
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "../client/build", "index.html"));
+});
 
 // Error handling middleware
 app.use((err, req, res, next) => {

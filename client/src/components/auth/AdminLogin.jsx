@@ -8,6 +8,7 @@ class AdminLogin extends Component {
     email: "",
     password: "",
     error: null,
+    loading: false,
     attempts: 0,
     isLocked: false,
     lockoutTimer: null,
@@ -39,7 +40,12 @@ class AdminLogin extends Component {
     const { email, password } = this.state;
 
     try {
+      this.setState({ loading: true, error: null });
       const response = await this.props.login(email, password);
+
+      if (!response || !response.user) {
+        throw new Error("Invalid response from server");
+      }
 
       if (response.user.role !== "admin") {
         this.setState((prevState) => {
@@ -50,22 +56,28 @@ class AdminLogin extends Component {
           return {
             error: "Access denied. Admin privileges required.",
             attempts: newAttempts,
+            loading: false,
           };
         });
         return;
       }
 
       // Reset attempts on successful admin login
-      this.setState({ attempts: 0 });
+      this.setState({ attempts: 0, loading: false });
     } catch (err) {
+      console.error("Login error:", err);
       this.setState((prevState) => {
         const newAttempts = prevState.attempts + 1;
         if (newAttempts >= 3) {
           this.lockAccount();
         }
         return {
-          error: err.response?.data?.error || "Invalid credentials",
+          error:
+            err.response?.data?.msg ||
+            err.response?.data?.error ||
+            "Invalid credentials",
           attempts: newAttempts,
+          loading: false,
         };
       });
     }
@@ -76,6 +88,7 @@ class AdminLogin extends Component {
     this.setState({
       isLocked: true,
       error: "Account locked for 5 minutes due to multiple failed attempts.",
+      loading: false,
       lockoutTimer: setTimeout(() => {
         this.setState({
           isLocked: false,
@@ -89,16 +102,15 @@ class AdminLogin extends Component {
 
   render() {
     const { isAuthenticated, user } = this.props;
+    const { loading, error, attempts, isLocked } = this.state;
 
     if (isAuthenticated && user?.role === "admin") {
-      return <Navigate to="/admin-dashboard" />;
+      return <Navigate to="/admin" />;
     }
 
-   
-
     return (
-      <div className="min-h-screen flex items-center justify-center  py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-md w-full space-y-8 bg-white rounded-xl shadow-2xl p-8 ">
+      <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-md w-full space-y-8 bg-white rounded-xl shadow-2xl p-8">
           <div>
             <h2 className="mt-2 text-center text-4xl font-extrabold text-gray-900 tracking-tight">
               Admin Portal
@@ -110,11 +122,8 @@ class AdminLogin extends Component {
             </p>
           </div>
           <form className="mt-8 space-y-6" onSubmit={this.handleSubmit}>
-            {this.state.error && (
-              <div
-                className="bg-red-50 border-l-4 border-red-400 p-4 rounded-md transition-all duration-300 animate-fade-in"
-                role="alert"
-              >
+            {error && (
+              <div className="bg-red-50 border-l-4 border-red-400 p-4 rounded-md">
                 <div className="flex">
                   <div className="flex-shrink-0">
                     <svg
@@ -130,16 +139,17 @@ class AdminLogin extends Component {
                     </svg>
                   </div>
                   <div className="ml-3">
-                    <p className="text-sm text-red-700">{this.state.error}</p>
-                    {this.state.attempts > 0 && !this.state.isLocked && (
+                    <p className="text-sm text-red-700">{error}</p>
+                    {attempts > 0 && !isLocked && (
                       <p className="mt-1 text-sm text-red-600">
-                        Attempts remaining: {3 - this.state.attempts}
+                        Attempts remaining: {3 - attempts}
                       </p>
                     )}
                   </div>
                 </div>
               </div>
             )}
+
             <div className="space-y-4">
               <div>
                 <label
@@ -148,32 +158,21 @@ class AdminLogin extends Component {
                 >
                   Email address
                 </label>
-                <div className="mt-1 relative">
+                <div className="mt-1">
                   <input
                     id="email"
                     name="email"
                     type="email"
                     required
-                    className="appearance-none block w-full px-3 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 
-                    focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-300
-                    disabled:bg-gray-100 disabled:cursor-not-allowed"
+                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                     placeholder="admin@example.com"
                     value={this.state.email}
                     onChange={this.handleChange}
-                    disabled={this.state.isLocked}
+                    disabled={isLocked || loading}
                   />
-                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                    <svg
-                      className="h-5 w-5 text-gray-400"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
-                      <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
-                    </svg>
-                  </div>
                 </div>
               </div>
+
               <div>
                 <label
                   htmlFor="password"
@@ -181,33 +180,18 @@ class AdminLogin extends Component {
                 >
                   Password
                 </label>
-                <div className="mt-1 relative">
+                <div className="mt-1">
                   <input
                     id="password"
                     name="password"
                     type="password"
                     required
-                    className="appearance-none block w-full px-3 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 
-                    focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-300
-                    disabled:bg-gray-100 disabled:cursor-not-allowed"
+                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                     placeholder="••••••••"
                     value={this.state.password}
                     onChange={this.handleChange}
-                    disabled={this.state.isLocked}
+                    disabled={isLocked || loading}
                   />
-                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                    <svg
-                      className="h-5 w-5 text-gray-400"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                  </div>
                 </div>
               </div>
             </div>
@@ -215,49 +199,40 @@ class AdminLogin extends Component {
             <div>
               <button
                 type="submit"
-                className={`group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white 
-                transition-all duration-300 transform hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-offset-2 
-                ${
-                  this.state.isLocked
+                className={`group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white ${
+                  isLocked || loading
                     ? "bg-gray-400 cursor-not-allowed"
-                    : "bg-blue-600 hover:bg-blue-700 focus:ring-indigo-500 shadow-lg hover:shadow-xl"
+                    : "bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                 }`}
-                disabled={this.state.isLocked}
+                disabled={isLocked || loading}
               >
-                <span className="absolute left-0 inset-y-0 flex items-center pl-3">
-                  {this.state.isLocked ? (
-                    <svg
-                      className="h-5 w-5 text-gray-300"
-                      fill="none"
+                {loading ? (
+                  <svg
+                    className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
                       stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-                      />
-                    </svg>
-                  ) : (
-                    <svg
-                      className="h-5 w-5 text-indigo-300 group-hover:text-indigo-200"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
-                      />
-                    </svg>
-                  )}
-                </span>
-                {this.state.isLocked
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                ) : null}
+                {isLocked
                   ? "Account Locked"
-                  : "Sign in to Admin Panel"}
+                  : loading
+                  ? "Signing in..."
+                  : "Sign in"}
               </button>
             </div>
           </form>
